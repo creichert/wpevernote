@@ -337,7 +337,7 @@ if (!class_exists('WPEvernote')) {
         function options_panel() {
             $options = $this->o;
             $status = $this->status;
-            include(dirname(__FILE__).'/'.'wpevernote-panel.php');
+            include(dirname(__FILE__).'/'.'wpevernote-panel.html');
         }
 
         /* Get the URL of this application. This URL is passed to the server (Evernote)
