@@ -34,7 +34,6 @@ License: GPL2
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-
 ini_set("include_path", ini_get("include_path") . PATH_SEPARATOR . dirname(__FILE__) . "/evernote-sdk-php/lib" . PATH_SEPARATOR);
 
 require_once 'autoload.php';
@@ -59,7 +58,8 @@ if (!class_exists('WPEvernote')) {
             'wpevernote_revision' => 12,
             'wpevernote_consumer_key' => '',
             'wpevernote_consumer_secret' => '',
-			'wpevernote_token' => "",
+			'wpevernote_token' => '',
+            'wpevernote_sandbox_token' => '',
             'wpevernote_refresh_period' => 'daily',
             'wpevernote_refresh_time' => '06:00 AM',
 			'wpevernote_notebooks' => array()
@@ -101,13 +101,18 @@ if (!class_exists('WPEvernote')) {
          */
         function authenticate() {
 
+            if ($this->o['wpevernote_sandbox_token']) {
+                $this->token = $this->o['wpevernote_sandbox_token'];
+                return true;
+            }
+
             if ($this->o['wpevernote_token']) {
                 $this->token = $this->o['wpevernote_token'];
                 return true;
             }
 
             if (!$this->o['wpevernote_consumer_key'] || !$this->o['wpevernote_consumer_secret']) {
-                $this->status = "You need API keys before you can add a url.";
+                $this->status = "You need API keys to use this plugin.";
                 return false;
             }
 
@@ -149,10 +154,8 @@ if (!class_exists('WPEvernote')) {
 
                 $this->fetch_posts();
 		        $this->status = "All notebooks refreshed.";
-                return;
-            }
 
-            if ($_POST['wpevernote_action'] == 'reset') {
+            } else if ($_POST['wpevernote_action'] == 'reset') {
 
                 check_admin_referer('wpevernote-3');
                 $this->o = $this->default_options;
@@ -190,6 +193,9 @@ if (!class_exists('WPEvernote')) {
                     } catch(EDAM\Error\EDAMSystemException $e) {
                         $this->status = "Incorrect API Credentials";
                         return;
+                    } catch(EDAM\Error\EDAMUserException $e) {
+                        $this->status = "Incorrect API Credentials";
+                        return;
                     }
 
                     $noteStore = $client->getNoteStore();
@@ -211,22 +217,19 @@ if (!class_exists('WPEvernote')) {
                         $this->status = "Notebook is not valid.";
                     }
                 }
+
             } elseif ($_POST['wpevernote_action'] == 'save') {
 
                 check_admin_referer('wpevernote-1', 'wpevernote-main');
                 $this->o["wpevernote_consumer_key"] = $_POST['wpevernote_consumer_key'];
                 $this->o["wpevernote_consumer_secret"] = $_POST['wpevernote_consumer_secret'];
-
-                if (isset($_POST['wpevernote_sandbox_token'])) {
-                    $this->o["wpevernote_token"] = $_POST['wpevernote_sandbox_token'];
-                    $this->o["wpevernote_sandbox_token"] = $_POST['wpevernote_sandbox_token'];
-                } else {
-                    $this->o["wpevernote_sandbox_token"] = "";
-                }
+                $this->o["wpevernote_sandbox_token"] = $_POST['wpevernote_sandbox_token'];
                 $this->o["wpevernote_refresh_period"] = $_POST['wpevernote_refresh_period'];
                 $this->o["wpevernote_refresh_time"] = $_POST['wpevernote_refresh_time'];
                 update_option("wpevernote-options", $this->o);
                 $this->status = "Options saved";
+
+                $this->authenticate();
             }
 
             if ($this->check_refresh())
