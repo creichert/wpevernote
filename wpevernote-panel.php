@@ -163,5 +163,7 @@
   </form>
   </div>
   <p>A <a href="http://reichertbrothers.com/" target="_blank">Reichert Brothers</a> software product.</p>
-  <p>Donations: <a href="" target="_blank">l2k3j4h5lk324jh5l2k3j4h5l23k4j5</a></p>
+  <p>Donations:<br/>BTC: <a href="" target="_blank">1NHHD9DehnVVTDSU71NJkvLePiKYCQGNY3</a>
+              <br/>DOGE: <a href="" target="_blank">DBwppk2zKrCqHGxaRJuvLDiKSZVPUzJ81d</a>
+  </p>
 </div>
