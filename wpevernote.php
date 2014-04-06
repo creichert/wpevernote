@@ -47,8 +47,6 @@ if (!class_exists('WPEvernote')) {
     class WPEvernote
     {
         var $o;
-        var $plugin_url;
-        var $plugin_path;
         var $status = "";
 
         /* OAuth token. */
@@ -73,14 +71,8 @@ if (!class_exists('WPEvernote')) {
         );
 
         function WPEvernote() {
-            $this->plugin_path_url();
             $this->install_plugin();
             $this->actions_filters();
-        }
-
-        function plugin_path_url() {
-            $this->plugin_url = WP_PLUGIN_URL . '/wpevernote/';
-            $this->plugin_path = dirname(__FILE__).'/';
         }
 
         function install_plugin() {
@@ -282,9 +274,9 @@ if (!class_exists('WPEvernote')) {
 
                     $new_post['post_title'] = $note->title;
                     $new_post['comment_status'] = "closed";
-                    $new_post['post_author'] = "dgproperties";
+                    $new_post['post_author'] = wp_get_current_user();
                     $new_post['post_content'] = $noteContent;
-                    $new_post['post_status'] = "Draft";
+                    $new_post['post_status'] = "publish";
                     $new_post['post_type'] = 'post';
                     $new_post['post_date'] = date("Y-m-d H:i:s", mktime());
                     $new_post['post_category'] = $note->tagNames[0];
@@ -339,22 +331,20 @@ if (!class_exists('WPEvernote')) {
         }
 
         function admin_menu() {
-            add_submenu_page('options-general.php','WP Evernote', 'WP Evernote', 9, __FILE__, array($this, 'options_panel'));
+            add_submenu_page('options-general.php', 'WP Evernote', 'WP Evernote', 9, __FILE__, array($this, 'options_panel'));
         }
 
         function options_panel() {
             $options = $this->o;
             $status = $this->status;
-            include($this->plugin_path.'wpevernote-panel.php');
+            include(dirname(__FILE__).'/'.'wpevernote-panel.php');
         }
 
-        /*
-         * Get the URL of this application. This URL is passed to the server (Evernote)
+        /* Get the URL of this application. This URL is passed to the server (Evernote)
          * while obtaining unauthorized temporary credentials (step 1). The resource owner
          * is redirected to this URL after authorizing the temporary credentials (step 2).
          */
-        function getCallbackUrl()
-        {
+        function getCallbackUrl() {
             $thisUrl = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
             $thisUrl .= $_SERVER['SERVER_NAME'];
             $thisUrl .= ($_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443) ? "" : (":".$_SERVER['SERVER_PORT']);
