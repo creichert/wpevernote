@@ -14,7 +14,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 WP Evernote is a Wordpress plugin which will generate posts
 from notes in a public Evernote notebook.
 
-***This plugin is currently in an Alpha state. Currently, we are working
+***This plugin is currently in a testing state. Currently, we are working
 on support for API keys and automatic scheduled updates.***
 
 == Description ==
