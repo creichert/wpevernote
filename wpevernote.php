@@ -56,13 +56,20 @@ if (!class_exists('WPEvernote')) {
 
         var $default_options = array(
             'wpevernote_revision' => 12,
+            /* oauth. */
             'wpevernote_consumer_key' => '',
             'wpevernote_consumer_secret' => '',
-			'wpevernote_token' => '',
+            'wpevernote_oauth_verifier' => '',
+            'wpevernote_access_token' => '',
+            'wpevernote_request_token' => '',
+
+            /* sandbox oauth token. */
             'wpevernote_sandbox_token' => '',
+
+            /* notebook handling. */
             'wpevernote_refresh_period' => 'daily',
             'wpevernote_refresh_time' => '06:00 AM',
-			'wpevernote_notebooks' => array()
+            'wpevernote_notebooks' => array()
         );
 
         function WPEvernote() {
@@ -106,8 +113,8 @@ if (!class_exists('WPEvernote')) {
                 return true;
             }
 
-            if ($this->o['wpevernote_token']) {
-                $this->token = $this->o['wpevernote_token'];
+            if ($this->o['wpevernote_access_token']) {
+                $this->token = $this->o['wpevernote_access_token'];
                 return true;
             }
 
@@ -140,7 +147,7 @@ if (!class_exists('WPEvernote')) {
                     $requestToken['oauth_token_secret'],
                     $_GET['oauth_verifier']
                 );
-                $this->o['wpevernote_token'] = $accessToken['oauth_token'];
+                $this->o['wpevernote_access_token'] = $accessToken['oauth_token'];
                 update_option("wpevernote-options", $this->o);
             }
 
