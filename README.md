@@ -10,7 +10,9 @@ on support for API keys and automatic scheduled updates.***
 Debugging
 =========
 
-`Fatal error: Class 'OAuth' not found in .../wpevernote/evernote-sdk-php/lib/Evernote/Client.php on line 46`
-..* You need to install the oauth module for php.
+> Fatal error: Class 'OAuth' not found in .../wpevernote/evernote-sdk-php/lib/Evernote/Client.php on line 46`
+
+You need to install the oauth module for php.
+
 * pecl install oauth
 * You should add "extension=oauth.so" to php.ini
