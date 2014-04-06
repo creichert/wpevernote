@@ -4,7 +4,7 @@
 Plugin Name: WP Evernote
 Plugin URI:
 Description: WP Evernote allows Evernote users to automatically post
-             public notebooks to WordPress.  
+             public notebooks to WordPress.
 Author: Christopher Reichert
 Author URI: http://reichertbrothers.com
 Version: 0.1
@@ -21,7 +21,7 @@ require_once 'packages/UserStore/UserStore.php';
 
 if (!class_exists('WPEvernote')) {
     class WPEvernote
-    { 
+    {
         var $o;
         var $plugin_url;
         var $plugin_path;
@@ -32,11 +32,11 @@ if (!class_exists('WPEvernote')) {
 
         var $default_options = array(
             'wpevernote_revision' => 12,
-            'wpevernote_consumer_key' => '',    
-            'wpevernote_consumer_secret' => '',    
+            'wpevernote_consumer_key' => '',
+            'wpevernote_consumer_secret' => '',
 			'wpevernote_token' => "",
             'wpevernote_refresh_period' => 'daily',
-            'wpevernote_refresh_time' => '06:00 AM',    
+            'wpevernote_refresh_time' => '06:00 AM',
 			'wpevernote_notebooks' => array()
         );
 
@@ -205,7 +205,7 @@ if (!class_exists('WPEvernote')) {
                 $this->status = "Options saved";
             }
 
-            if ($this->check_refresh()) 
+            if ($this->check_refresh())
                 $this->fetch_posts();
         }
 
@@ -217,7 +217,7 @@ if (!class_exists('WPEvernote')) {
             $user = $userStore->getUser($this->token);
 
             foreach ($this->o["wpevernote_notebooks"] as $epnotebook) {
-            
+
                 $notebookName = basename(parse_url($epnotebook['pub_url'], PHP_URL_PATH));
                 try {
 
@@ -290,7 +290,7 @@ if (!class_exists('WPEvernote')) {
             if (mktime() >= $next) return true;
             else return false;
         }
-        
+
         function convert_time($timer) {
             $tp = split(" ", $timer);
             if (count($tp) == 2) {
@@ -307,7 +307,7 @@ if (!class_exists('WPEvernote')) {
         function admin_menu() {
             add_submenu_page('options-general.php','WP Evernote', 'WP Evernote', 9, __FILE__, array($this, 'options_panel'));
         }
-       
+
         function options_panel() {
             $options = $this->o;
             $status = $this->status;
@@ -328,7 +328,7 @@ if (!class_exists('WPEvernote')) {
             return $thisUrl;
         }
     }
-    
+
     $evernote = new WPEvernote();
 }
 
