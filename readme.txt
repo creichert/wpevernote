@@ -37,6 +37,6 @@ of this plugin to support more Evernote features.
 == Changelog ==
 
 = 0.1 =
-* Sandbox token support (This is currently the only supported auth method).
+* Basic OAuth authorization support.
 * Create posts from public notebook notes.
 * Posts created based on Evernote note guid to prevent duplication.

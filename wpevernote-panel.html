@@ -21,7 +21,7 @@
     along with this program; if not, write to the Free Software
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 -->
-<?php if (isset($_POST['wpevernote_action'])) { ?>
+<?php if ($status) { ?>
 <div id="message" class="updated fade" style="background-color: rgb(255, 251, 204);">
   <p><strong><?php echo $status; ?></strong></p>
 </div>
@@ -140,12 +140,6 @@
             <td width="150" height="25">Consumer Secret:</td>
             <td align="left">
               <input maxlength="16" type="text" name="wpevernote_consumer_secret" id="wpevernote_consumer_secret" value="<?php echo $options["wpevernote_consumer_secret"]; ?>" style="width: 170px" />
-            </td>
-          </tr>
-          <tr>
-            <td width="150" height="25">Sandbox Token (Developer Option):</td>
-            <td align="left">
-              <input maxlength="128" type="text" name="wpevernote_sandbox_token" id="wpevernote_sandbox_token" value="<?php echo $options["wpevernote_sandbox_token"]; ?>" style="width: 170px" />
             </td>
           </tr>
         </table>
