@@ -8,6 +8,7 @@ Description: WP Evernote allows Evernote users to automatically post
 Author: Christopher Reichert
 Author URI: http://reichertbrothers.com
 Version: 0.1
+License: GPL2
 */
 
 /*  Copyright 2014  Christopher Reichert <christopher@reichertbrothers.com>
@@ -117,7 +118,6 @@ if (!class_exists('WPEvernote')) {
             $client = new Evernote\Client(array(
               'consumerKey' => $this->o['wpevernote_consumer_key'],
               'consumerSecret' => $this->o['wpevernote_consumer_secret'],
-              'sandbox' => true
             ));
             $requestToken = $client->getRequestToken($this->getCallbackUrl());
             $authorizeUrl = $client->getAuthorizeUrl($requestToken['oauth_token']);
