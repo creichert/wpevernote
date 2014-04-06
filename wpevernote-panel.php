@@ -90,7 +90,6 @@
 	      }
 	      echo "<td colspan='8' align='right'><input class=\"inputbutton\" type=\"submit\" value=\"Remove\" name=\"saving\" /></td></tr>";
         ?>
-
       </table>
     </form>
     <form method="post">

@@ -96,7 +96,7 @@ if (!class_exists('WPEvernote')) {
 
         /* This function sets $token after OAuth authentication.
          *
-         * return true if succesful.
+         * Returns true if successful.
          */
         function authenticate() {
 
@@ -341,8 +341,8 @@ if (!class_exists('WPEvernote')) {
         }
 
         /* Get the URL of this application. This URL is passed to the server (Evernote)
-         * while obtaining unauthorized temporary credentials (step 1). The resource owner
-         * is redirected to this URL after authorizing the temporary credentials (step 2).
+         * while obtaining unauthorized temporary credentials. The resource owner
+         * is redirected to this URL after authorizing the temporary credentials.
          */
         function getCallbackUrl() {
             $thisUrl = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
