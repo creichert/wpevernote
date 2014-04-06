@@ -77,13 +77,13 @@
           <tr>
             <th scope="col">Notebook</th>
             <th scope="col">Last Refresh</th>
-            <th scope="col">Remove</th>
+            <th scope="col" style="text-align: right">Remove</th>
           </tr>
         </thead>
         <?php
           if(!(empty($options['wpevernote_notebooks']))) {
 	          foreach ($options['wpevernote_notebooks'] as $idx => $tps) {
-                  echo "<tr><td><a href=\"".$tps['pub_url']."\">".$tps['pub_url']."</a></td><td>".date("d M y  H:i:s",$tps['last_refresh_notebook'])."</td><td align='center'><input name='enotebook[]' type='checkbox' value='".$idx."'></td></tr>";
+                  echo "<tr><td><a href=\"".$tps['pub_url']."\">".$tps['pub_url']."</a></td><td>".date("d M y  H:i:s",$tps['last_refresh_notebook'])."</td><td align='right'><input name='enotebook[]' type='checkbox' value='".$idx."'></td></tr>";
               }
 	      } else {
 		      echo "<tr><td colspan='5' align='center'><strong><em>None</em></strong></td></tr>";
