@@ -154,6 +154,12 @@
   </tbody>
   </table>
   </form>
+  <form method="post">
+    <?php wp_nonce_field('wpevernote-3' ); ?>
+    <input type="hidden" name="wpevernote_action" value="reset" />
+    <input class="inputbutton" type="submit" value="Reset Options" name="saving" />
+    </span>
+  </form>
   </div>
   <p>A <a href="http://reichertbrothers.com/" target="_blank">Reichert Brothers</a> software product.</p>
   <p>Donations:<br/>BTC: <a href="" target="_blank">1NHHD9DehnVVTDSU71NJkvLePiKYCQGNY3</a>
