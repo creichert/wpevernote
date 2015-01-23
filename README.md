@@ -4,15 +4,9 @@ WP Evernote
 WP Evernote is a Wordpress plugin which will generate posts
 from notes in a public Evernote notebook.
 
-***This plugin is currently in an experimental state. We are working
-on support for API keys and automatic scheduled updates.***
+*** v2.0 of this plugin and up only support the
+evernote-cloud-sdk-php.  Refer to prior versions of wpevernote for
+classic php SDK and PHP OAuth Extension support. ***
 
-Debugging
-=========
-
-> Fatal error: Class 'OAuth' not found in .../wpevernote/evernote-sdk-php/lib/Evernote/Client.php on line 46`
-
-You need to install the oauth module for php.
-
-* pecl install oauth
-* You should add "extension=oauth.so" to php.ini
+*** Sandbox mode must be enabled manually in the wpevernote.php
+function ***

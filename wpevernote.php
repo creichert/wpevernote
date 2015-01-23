@@ -34,14 +34,14 @@ License: GPL2
     Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-ini_set("include_path", ini_get("include_path") . PATH_SEPARATOR . dirname(__FILE__) . "/evernote-sdk-php/lib" . PATH_SEPARATOR);
+ini_set("include_path", ini_get("include_path") . PATH_SEPARATOR . dirname(__FILE__) . "/evernote-cloud-sdk-php/src" . PATH_SEPARATOR);
+
+/* require_once 'OAuth.php'; */
 
 require_once 'autoload.php';
 require_once 'Evernote/Client.php';
-require_once 'packages/Errors/Errors_types.php';
-require_once 'packages/Types/Types_types.php';
-require_once 'packages/Limits/Limits_constants.php';
-require_once 'packages/UserStore/UserStore.php';
+require_once 'Evernote/Auth/OauthHandler.php';
+
 
 if (!class_exists('WPEvernote')) {
     class WPEvernote
@@ -52,7 +52,8 @@ if (!class_exists('WPEvernote')) {
         /* OAuth token. */
         var $token = "";
 
-        var $SANDBOX = true;
+        // BUG needs to be set in the plugin configuration
+        var $SANDBOX = false;
 
         var $default_options = array(
             'wpevernote_revision' => 12,
@@ -91,41 +92,91 @@ if (!class_exists('WPEvernote')) {
 
         function actions_filters() {
             add_action('init', array(&$this, 'init'));
+            add_action('init', array(&$this, 'wpevernote_custom_post_type'));
             add_action('admin_menu', array(&$this, 'admin_menu'));
         }
+
+        function wpevernote_custom_post_type() {
+            $labels = array(
+                'name'          => __( 'Evernote Posts' ),
+                'singular_name' => __( 'Evernote Post' ),
+                'add_new_item'  => __( 'New Evernote Post' ),
+                'edit_item'     => __( 'Edit Evernote Post' ),
+                'new_item'      => __( 'New Evernote Post' ),
+                'view_item'     => __( 'View Evernote Post' ),
+                'all_items'     => __( 'All Evernote Posts' ),
+                'search_items'  => __( 'Search Evernote Posts' ),
+            );
+            $args = array(
+                'public'          => true,
+                'has_archive'     => true,
+                'labels'          => $labels,
+                'description'     => 'WPEvernote posts',
+                'query_var'       => true,
+                'menu_positions'  => '15',
+                'capability_type' => 'post',
+                'hierarchical'    => true,
+                'taxonomies'      => array(),
+                'supports'        => array( 'title'
+                                           , 'editor'
+                                           , 'author'
+                                           , 'thumbnail'
+                                           , 'page-attributes'
+                ),
+                'rewrite'         => true
+            );
+            register_post_type( 'wpevernote', $args );
+        }
+
+
 
        function init() {
 
             /* Authenticate VIA OAuth.
-             * pecl install oauth
-             * You should add "extension=oauth.so" to php.ini
+             *
+             * This version uses the evernote-cloud-sdk-php package which automates
+             * most of the oauth protocol. The PHP OAuth Extension is not needed.
              *
              * Sets $token after succesful authenticion.
              *
-             * Returns true if successful.
              */
-            if (isset($_GET['oauth']) && isset($_GET['oauth_verifier'])) {
-                $this->o['wpevernote_oauth_verifier'] = $_GET['oauth_verifier'];
-                $this->status = 'Content owner authorized the temporary credentials';
-                if (!$this->getTokenCredentials()) {
-                    $this->status = "Uknown error authorizing API keys";
-                    return;
-                } else {
-                     $url = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
-                     $url .= $_SERVER['SERVER_NAME'];
-                     $url .= ($_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443) ? "" : (":".$_SERVER['SERVER_PORT']);
-                     $url .= $_SERVER['SCRIPT_NAME'];
-                     $url .= '?page=wpevernote/wpevernote.php';
-                     header('Location: ' . $url);
-                     return;
-                }
+            if (isset($_GET['oauth_verifier'])) {
+
+                  if ( $this->evernoteAuthenticate() ) {
+
+                      $this->o['wpevernote_oauth_verifier'] = $_GET['oauth_verifier'];
+
+                      $this->token = $this->o['wpevernote_access_token'];
+                      $this->status = 'Content owner authorized the temporary credentials';
+                      update_option("wpevernote-options", $this->o);
+
+                  } else {
+
+                      $this->status = "Uknown error authorizing API keys";
+                      return false;
+                  }
+
+                  // BUG
+                  //
+                  // When the oauth_verifier header is discovered, we
+                  // try to process and redirect the call. However,
+                  // the redirect fails and we can't set the header here.
+                  //
+                  //  $url = (empty($_SERVER['HTTPS'])) ? "http://" : "https://";
+                  //  $url .= $_SERVER['SERVER_NAME'];
+                  //  $url .= ($_SERVER['SERVER_PORT'] == 80 || $_SERVER['SERVER_PORT'] == 443) ? "" : (":".$_SERVER['SERVER_PORT']);
+                  //  $url .= $_SERVER['SCRIPT_NAME'];
+                  //  $url .= '?page=wpevernote/wpevernote.php';
+                  //  header('Location: ' . $url);
+                  //  return;
+
             }
 
-            $this->token = $this->o['wpevernote_access_token'];
 
             if ($_POST['wpevernote_action'] == 'run') {
                 check_admin_referer('wpevernote-2');
 
+                $this->token = $this->o['wpevernote_access_token'];
                 if (!$this->token) {
                     $this->status = "Authorize your API keys before refreshing notebooks";
                     return;
@@ -154,23 +205,29 @@ if (!class_exists('WPEvernote')) {
 
 		    } elseif ($_POST['wpevernote_action'] == 'add') {
 
+                check_admin_referer('wpevernote-0', 'wpevernote-add');
+
+                /* (Christopher): Hack to set key. not sure why token is not being
+                 * initialized when set. */
+                $this->token = $this->o['wpevernote_access_token'];
                 if (!$this->token) {
                     $this->status = "Authorize your API keys before adding notebooks";
                     return;
                 }
 
-                check_admin_referer('wpevernote-0', 'wpevernote-add');
                 if (isset($_POST['wpevernote_pub_url'])){
 
-                    /* Get a client to access NoteStore and UserStore. */
-                    $client = new Evernote\Client(array('token' => $this->token));
-                    $userStore = $client->getUserStore();
-                    $noteStore = $client->getNoteStore();
-
-                    /* Get the user for the token. This is needed for user->id. */
                     try {
+
+                        /* Get a client to access NoteStore and UserStore. */
+                        $client = new Evernote\AdvancedClient($this->token, false);
+                        $userStore = $client->getUserStore();
+                        $noteStore = $client->getNoteStore();
+
+                        /* Get the user for the token. This is needed for user->id. */
                         $user = $userStore->getUser($this->token);
                     } catch(EDAM\Error\EDAMSystemException $e) {
+                        print_r($e);
                         $this->status = "Incorrect API Credentials";
                         return;
                     } catch(EDAM\Error\EDAMUserException $e) {
@@ -204,6 +261,7 @@ if (!class_exists('WPEvernote')) {
                 $this->o["wpevernote_consumer_secret"] = $_POST['wpevernote_consumer_secret'];
                 $this->o["wpevernote_refresh_period"] = $_POST['wpevernote_refresh_period'];
                 $this->o["wpevernote_refresh_time"] = $_POST['wpevernote_refresh_time'];
+                update_option("wpevernote-options", $this->o);
 
                 /* We can add this to it's own authenticate button. */
                 if (!$this->token) {
@@ -214,16 +272,17 @@ if (!class_exists('WPEvernote')) {
                         return;
                     }
 
-                    if ($this->getTemporaryCredentials()) {
-                        header('Location: ' . $this->getAuthorizationUrl());
+                    if ($this->evernoteAuthenticate()) {
+                        $this->status = "Authentication successful.";
+                        // header('Location: ' . $this->getAuthorizationUrl());
+
+                        $this->status = "Options saved";
+                        update_option("wpevernote-options", $this->o);
                     } else {
                         $this->status = "Uknown authentication error.";
                         return;
                     }
                 }
-
-                $this->status = "Options saved";
-                update_option("wpevernote-options", $this->o);
             }
 
             if ($this->check_refresh() && $this->token) $this->fetch_posts();
@@ -231,12 +290,14 @@ if (!class_exists('WPEvernote')) {
 
         function fetch_posts() {
 
-            $client = new Evernote\Client(array('token' => $this->token));
-
             try {
+                $client = new Evernote\AdvancedClient($this->token, false);
                 $noteStore = $client->getNoteStore();
                 $userStore = $client->getUserStore();
                 $user = $userStore->getUser($this->token);
+            } catch(EDAM\Error\EDAMSystemException $e) {
+                $this->status = "Incorrect API Credentials";
+                return;
             } catch(EDAM\Error\EDAMUserException $e) {
                 $this->status = "Error authenticating with Evernote. Try authenticating your API keys. Your API keys could be expired.";
                 return;
@@ -251,6 +312,7 @@ if (!class_exists('WPEvernote')) {
 
                 } catch(EDAM\Error\EDAMNotFoundException $e) {
                     $this->status = "Invalid Notebook.";
+                    return false;
                 }
 
                 $NotesMetadataResultSpec = new EDAM\NoteStore\NotesMetadataResultSpec();
@@ -269,15 +331,22 @@ if (!class_exists('WPEvernote')) {
                     /* Generate a blog post based on this note. */
 
                     /* Test if post exists. Use persistent post ID as opposed to title. */
-                    $posts = query_posts('meta_key=evernote_guid&meta_value='.$note->guid);
+                    // $posts = query_posts(array('post_type' => array('post', 'testimonial'),
+                    //                           'meta_query' => array('evernote_guid' => $note->guid)));
+                    $posts = query_posts('post_type=wpevernote&meta_key=evernote_guid&meta_value='.$note->guid);
+                    $posts = array_merge($posts, query_posts('post_type=wpevernote&meta_key=evernote_guid&meta_value='.$note->guid));
+
+                    // update existing post
                     if ($posts) $new_post['ID'] = $posts[0]->ID;
 
                     $new_post['post_title'] = $note->title;
                     $new_post['comment_status'] = "closed";
-                    $new_post['post_author'] = wp_get_current_user();
+                    $new_post['post_author'] = 1;
                     $new_post['post_content'] = $noteContent;
-                    $new_post['post_status'] = "draft";
-                    $new_post['post_type'] = 'post';
+
+
+                    $new_post['post_status'] = "publish";
+                    $new_post['post_type'] = 'wpevernote';
                     $new_post['post_date'] = date("Y-m-d H:i:s", mktime());
                     $new_post['post_category'] = $note->tagNames[0];
                     $new_post['tags_input'] = $note->tagNames;
@@ -355,85 +424,41 @@ if (!class_exists('WPEvernote')) {
             return $thisUrl;
         }
 
-        function getTemporaryCredentials() {
-            try {
 
-                $client = new Evernote\Client(array(
-                    'consumerKey' => $this->o['wpevernote_consumer_key'],
-                    'consumerSecret' => $this->o['wpevernote_consumer_secret'],
-                    'sandbox' => $this->SANDBOX
-                ));
-
-                $requestTokenInfo = $client->getRequestToken($this->getCallbackUrl());
-                if ($requestTokenInfo) {
-                    $this->o['wpevernote_request_token'] = $requestTokenInfo['oauth_token'];
-                    $this->o['wpevernote_request_token_secret'] = $requestTokenInfo['oauth_token_secret'];
-                    $this->status = 'Obtained temporary credentials';
-
-                    return true;
-                } else {
-                    $this->status = 'Failed to obtain temporary credentials.';
-                }
-            } catch (OAuthException $e) {
-                $this->status = 'Error obtaining temporary credentials: ' . $e->getMessage();
-            }
-
-            return false;
-        }
-
-        /*
-         * Get the Evernote server URL used to authorize unauthorized temporary credentials.
+        /* Authentication.
+         *
+         * This function is called twice:
+         *  1) request oauth verifier
+         *      When the authorize() function is called this will actually redirect
+         *       and be  caught at the top of the plugin code when the oauth_verifier
+         *       header is checked
+         *  2) request access key
+         *
          */
-        function getAuthorizationUrl() {
-            $client = new Evernote\Client(array(
-                'consumerKey' => $this->o['wpevernote_consumer_key'],
-                'consumerSecret' => $this->o['wpevernote_consumer_secret'],
-                'sandbox' => $this->SANDBOX
-            ));
-
-            return $client->getAuthorizeUrl($this->o['wpevernote_request_token']);
-        }
-
-        /*
-         * The third and final step in OAuth authentication: the client (this application)
-         * exchanges the authorized temporary credentials for token credentials.
-         *
-         * After successfully completing this step, the client has obtained the
-         * token credentials that are used to authenticate to the Evernote API.
-         *
-         * This step is defined in RFC 5849 section 2.3:
-         * http://tools.ietf.org/html/rfc5849#section-2.3
-         *
-         * @return boolean TRUE on success, FALSE on failure
-         */
-        function getTokenCredentials() {
+        function evernoteAuthenticate() {
+            $key      = $this->o['wpevernote_consumer_key'];
+            $secret   = $this->o['wpevernote_consumer_secret'];
+            $callback = $this->getCallbackUrl();
 
             try {
+                $oauth_handler = new \Evernote\Auth\OauthHandler(false);
+                $oauth_data  = $oauth_handler->authorize($key, $secret, $callback);
 
-                $client = new Evernote\Client(array(
-                    'consumerKey' => $this->o['wpevernote_consumer_key'],
-                    'consumerSecret' => $this->o['wpevernote_consumer_secret'],
-                    'sandbox' => $this->SANDBOX
-                ));
-
-                $accessTokenInfo = $client->getAccessToken($this->o['wpevernote_request_token'],
-                                                           $this->o['wpevernote_request_token_secret'],
-                                                           $this->o['wpevernote_oauth_verifier']);
-
-                if ($accessTokenInfo) {
-                    $this->o['wpevernote_access_token'] = $accessTokenInfo['oauth_token'];
-                    $this->status = 'API Keys authenticated! Add a notebook.';
+                if ($oauth_data['oauth_token']) {
+                    $this->o['wpevernote_access_token'] = $oauth_data['oauth_token'];
                     update_option('wpevernote-options', $this->o);
+                    $this->status = 'API Keys authenticated! Add a notebook.';
                     return true;
                 } else {
-                    $this->status = 'Failed to obtain token credentials.';
+                    $this->status = 'Failed to obtain token access credentials.';
+                    return false;
                 }
 
-            } catch (OAuthException $e) {
-                $this->status = 'Error obtaining token credentials: ' . $e->getMessage();
+            } catch (Evernote\Exception\AuthorizationDeniedException $e) {
+                //If the user decline the authorization, an exception is thrown.
+                echo "Evernote Authentication Declined";
+                return false;
             }
-
-            return false;
         }
     }
 
